@@ -15,6 +15,9 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 from scipy import stats
+from sklearn.preprocessing import StandardScaler
+import joblib
+from beach_model import model_eval
 
 ### Input Cases to Evaluate
 base_folder = '/Volumes/GoogleDrive/My Drive/water_quality_modeling/forecasting'
@@ -22,6 +25,9 @@ base_folder = '/Volumes/GoogleDrive/My Drive/water_quality_modeling/forecasting'
 beach = ['Cowell', 'HSB3N']#,'Manhattan']
 fib = ['EC','ENT']#,'ENT']
 model_types = ['per','lm','svm', 'rf', 'gbm']
+
+tune=True
+tune_prob = 0.25  # prediction threshold used for testing how tuned models would perform
 
 ### Plot parameters / functions
 if beach == 'Cowell':
@@ -92,40 +98,54 @@ def plot_spines(axx, offset=8): # Offset position, Hide the right and top spines
 
 # %% Aggregate Results
 perf_file_name = os.path.join(base_folder, 'tables_figs','performance_metrics_all.csv')
+tune_file_name = os.path.join(base_folder, 'tables_figs','performance_metrics_all_tuned_' + str(int(100*tune_prob)) + '.csv')
 feature_file_name = os.path.join(base_folder, 'tables_figs','model_features_all.csv')
 
 try:
     df_perf = pd.read_csv(perf_file_name)
     df_features = pd.read_csv(feature_file_name)
+    if tune:
+        df_tune = pd.read_csv(tune_file_name)
     
 except:
     df_perf = pd.DataFrame()
+    df_tune = pd.DataFrame()
     df_features = pd.DataFrame()
+    
+    ### Iterate
     for b in beach:
+        print('\n' + b)
         model_base_folder = os.path.join(base_folder, 'beach', b, 'models')
         
         for f in fib:
+            print('\n' + f)
             fib_folder = os.path.join(model_base_folder, f)
             if not os.path.isdir(fib_folder):  # if folder doesn't exist
                 continue
             partitions = [s for s in os.listdir(fib_folder) if 'train' in s]
             
             for p in partitions:
-                lead_times = [lt for lt in os.listdir(os.path.join(fib_folder, p)) if 'lt' in lt]
+                print(p)
+                par_folder = os.path.join(fib_folder, p)
+                lead_times = [lt for lt in os.listdir(par_folder) if 'lt' in lt]
+                if tune:
+                    train_data = pd.read_csv(os.path.join(par_folder, 'train_data.csv'), index_col=['date']) 
+                    test_data = pd.read_csv(os.path.join(par_folder, 'test_data.csv'), index_col=['date']) 
                 
                 for lt in lead_times:
-                    models = [m for m in os.listdir(os.path.join(fib_folder, p, lt)) if m in model_types]
+                    print(' LT - ' + str(lt))
+                    models = [m for m in os.listdir(os.path.join(par_folder, lt)) if m in model_types]
                     if len(models) == len(model_types):
                         models = model_types
                     
                     for m in models:
-                        model_folder = os.path.join(fib_folder, p, lt, m)
+                        model_folder = os.path.join(par_folder, lt, m)
                         
                         ## Model metadata
                         meta = {'beach':b, 'FIB':f, 'partition': p,
                                 'lead_time': int(lt[-1]), 'model': m}
                         
-                        ## Performance
+                        ### Performance
                         model_perf = pd.read_csv(os.path.join(model_folder, m + '_performance.csv'), index_col=[0])
                         model_perf.index.name = 'dataset'
                         model_perf.reset_index(inplace=True)
@@ -138,22 +158,59 @@ except:
                         
                         if m != 'per':
                             
-                            ## Features
+                            ### Features
                             temp_features = pd.read_csv(os.path.join(model_folder, 
                                                                       m + '_features.csv'))
                             model_features = meta.copy()
-                            model_features['feature'] = list(temp_features.features)
+                            env_vars = list(temp_features.features)
+                            model_features['feature'] = env_vars
                             
                             df_features = df_features.append(pd.DataFrame(model_features))
-                          
+                            
+                            if tune: ### Tune
+                                bin_class = joblib.load(os.path.join(model_folder, m + '_model.pkl')) # load model pkl
+                                #env_vars = list(bin_class.feature_names_in_) # get variables
+                                
+                                ## Scale Vars
+                                scaler = StandardScaler()
+                                scaler.fit(train_data)
+                                X_train = pd.DataFrame(data=scaler.transform(train_data), index=train_data.index, columns=train_data.columns)
+                                X_train = X_train[env_vars]
+                                X_test = pd.DataFrame(data=scaler.transform(test_data), index=test_data.index, columns=test_data.columns)
+                                X_test = X_test[env_vars]
+                                
+                                ## probability predictions
+                                train_pred = bin_class.predict_proba(X_train[env_vars])[:,1]
+                                test_pred = bin_class.predict_proba(X_test[env_vars])[:,1]
+                                
+                                ## Test at new decision threshold
+                                train_tune = model_eval(train_data[f+'_exc'],train_pred, thresh=tune_prob)
+                                test_tune = model_eval(test_data[f+'_exc'],test_pred, thresh=tune_prob)
+                                
+                                ## Add to Tune DF
+                                tune_perf = pd.DataFrame(data=[train_tune,test_tune], index=['train','test'])
+                                tune_perf.index.name = 'dataset'
+                                tune_perf.reset_index(inplace=True)
+                                # Add metadata
+                                tune_perf = tune_perf.join(pd.DataFrame(data=meta, 
+                                                                          index=tune_perf.index), 
+                                                             how = 'left')
+                                df_tune = df_tune.append(tune_perf)  # Add to aggregated df
+                                
+                        else: # add PER perf to tune df, too
+                            if tune:
+                                df_tune = df_tune.append(model_perf)
     
     ### Organize Data
     meta_cols = list(meta.keys()) + ['dataset']
     perf_metrics = [c for c in df_perf if c not in meta_cols]
     df_perf = df_perf[meta_cols + perf_metrics].reset_index(drop=True)
+    if tune:
+        df_tune = df_tune[meta_cols + perf_metrics].reset_index(drop=True)
     
     ### Save
     df_perf.to_csv(perf_file_name, index=False)
+    df_tune.to_csv(tune_file_name, index=False)
     df_features.to_csv(feature_file_name, index=False)
 
 ## Convert model acronyms
@@ -165,6 +222,8 @@ model_map = {
     'per': 'PER'
     }
 df_perf['model'] = df_perf['model'].map(model_map)
+if tune:
+    df_tune['model'] = df_tune['model'].map(model_map)
 df_features['model'] = df_features['model'].map(model_map)
 
 #%% Data Partitions
