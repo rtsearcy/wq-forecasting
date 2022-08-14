@@ -26,7 +26,7 @@ beach = ['Cowell', 'HSB3N']#,'Manhattan']
 fib = ['EC','ENT']#,'ENT']
 model_types = ['per','lm','svm', 'rf', 'gbm']
 
-tune=True
+tune = True
 tune_prob = 0.25  # prediction threshold used for testing how tuned models would perform
 
 ### Plot parameters / functions
@@ -131,6 +131,10 @@ except:
                 if tune:
                     train_data = pd.read_csv(os.path.join(par_folder, 'train_data.csv'), index_col=['date']) 
                     test_data = pd.read_csv(os.path.join(par_folder, 'test_data.csv'), index_col=['date']) 
+                
+                    # Length of datasets
+                    # print('Train: '+ str(len(pd.to_datetime(train_data.index).year.unique())))
+                    # print('Test: ' + str(len(pd.to_datetime(test_data.index).year.unique())))
                 
                 for lt in lead_times:
                     print(' LT - ' + str(lt))

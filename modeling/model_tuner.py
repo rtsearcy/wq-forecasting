@@ -12,7 +12,7 @@ Created on Mon Aug  8 17:43:28 2022
 @author: rtsearcy
 """
 
-def model_tuner(model, X, y, min_sens=0.3, min_spec=0.8, maximize='sens', scale=True): 
+def model_tuner(model, X, y, maximize='sens', min_sens=0.3, min_spec=0.8, scale=True): 
     
     import pandas as pd
     import numpy as np
@@ -37,15 +37,15 @@ def model_tuner(model, X, y, min_sens=0.3, min_spec=0.8, maximize='sens', scale=
     sens = np.round(tpr, 3)
     
     df_tune = pd.DataFrame(data=[thresholds,sens,spec], index=['thresh','sens','spec']).T
-    
-    df_tune = df_tune[(df_tune.sens >= min_sens) & (df_tune.spec >= min_spec)]
-    
-    assert len(df_tune) > 0, 'No threshold available to tune sens >= ' + min_sens + \
-        ' and spec >= ' + min_spec
-    
+        
     if maximize == 'sens':
+        df_tune = df_tune[(df_tune.spec >= min_spec)]
+        assert len(df_tune) > 0, 'No threshold available to tune spec >= ' + min_spec
         thresh = df_tune.iloc[-1]['thresh']
+        
     elif maximize == 'spec':
+        df_tune = df_tune[(df_tune.sens >= min_sens)]
+        assert len(df_tune) > 0, 'No threshold available to tune sens >= ' + min_sens
         thresh = df_tune.iloc[0]['thresh']
     
     return thresh
