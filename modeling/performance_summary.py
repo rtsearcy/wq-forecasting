@@ -580,6 +580,13 @@ df_perf[df_perf.model == 'PER'].groupby(['lead_time']).describe()[mets].loc[:, p
 now_compare[now_compare.model !='PER'].groupby(['lead_time']).describe()[['diff_' + m for m in mets]].loc[:, pd.IndexSlice[:,['50%','25%', '75%']]].round(3)
 now_compare[now_compare.model !='PER'].groupby(['beach','FIB','lead_time']).mean()[['diff_' + m for m in mets]].round(3)
 
+## Percent of models with worse performance than nowcast
+print('\nPercent of models with worse performance than nowcast')
+for met in mets:
+    print('\n'+met)
+    print(now_compare[(now_compare['diff_'+met] == 0) & 
+                      (now_compare.model !='PER')].groupby(['lead_time']).count()['model'] / (2 * 2 * n_part * n_model))
+
 
 # Wilcoxon SIgned Rank  Paired test
 print('\nWilcoxon Signed Rank Tests:')
@@ -597,7 +604,7 @@ for i in mets:
 print('\nBy model')
 for i in mets:
     print(i)
-    for m in models:
+    for m in model_map.values():
         if m == 'PER':
             continue
         print(m)

@@ -177,9 +177,11 @@ print(df_after[df_after.dataset=='test'].describe()[['sens','spec']].round(3))
 
 print('\nBy model:')
 print('\nBEFORE')
-print(df_before[df_before.dataset=='test'].groupby('model').describe()[['sens','spec','AUC']].loc[:, pd.IndexSlice[:,['50%','25%', '75%']]].round(2))
+bef=df_before[df_before.dataset=='test'].groupby('model').describe()[['sens','spec','AUC']].loc[:, pd.IndexSlice[:,['50%','25%', '75%']]].round(2)
+print(bef)
 print('\nAFTER')
-print(df_after[df_after.dataset=='test'].groupby('model').describe()[['sens','spec','AUC']].loc[:, pd.IndexSlice[:,['50%','25%', '75%']]].round(2))
+aft=df_after[df_after.dataset=='test'].groupby('model').describe()[['sens','spec','AUC']].loc[:, pd.IndexSlice[:,['50%','25%', '75%']]].round(2)
+print(aft)
 
 ## DTP
 df_after[df_after.dataset=='test'].DTP.describe()
@@ -193,8 +195,47 @@ df_change.describe().round(3)[['sens','spec','DTP']]
 
 # %% Plot Results
 
-### Change in metrics by model
-sns.boxplot(x='model', y = 'sens', data = df_change.reset_index())
+# ### Change in metrics by model
+# sns.boxplot(x='model', y = 'sens', data = df_change.reset_index())
 
-sns.scatterplot(x='spec',y='sens', hue='model',size='DTP', data=df_change.reset_index())
+# sns.scatterplot(x='spec',y='sens', hue='model',size='DTP', data=df_change.reset_index())
+
+### Before and After
+
+plt.figure(figsize=(8,4))
+
+y = 1
+w = 0.15
+s = 26
+for m in model_type:
+    plt.subplot(1,2,1)  # Sensitivity
+    plt.scatter(bef.loc[m]['sens']['50%'], y + w, s = s, c = 'k', marker = 'o')
+    plt.plot([bef.loc[m]['sens']['25%'], bef.loc[m]['sens']['75%']], [y+w, y+w], 'k')
+    
+    plt.scatter(aft.loc[m]['sens']['50%'], y - w, s = s, c = 'r', marker = 'o')
+    plt.plot([aft.loc[m]['sens']['25%'], aft.loc[m]['sens']['75%']], [y-w, y-w], 'r')
+
+
+    plt.subplot(1,2,2) # Specificity
+    plt.scatter(bef.loc[m]['spec']['50%'], y + w, s = s, c = 'k', marker = 'o')
+    plt.plot([bef.loc[m]['spec']['25%'], bef.loc[m]['spec']['75%']], [y+w, y+w], 'k')
+    
+    plt.scatter(aft.loc[m]['spec']['50%'], y - w, s = s, c = 'r', marker = 'o')
+    plt.plot([aft.loc[m]['spec']['25%'], aft.loc[m]['spec']['75%']], [y-w, y-w], 'r')
+    
+    plt.ylabel('')
+    
+    y+=1
+
+plt.subplot(1,2,1)
+plt.title('Sensitivity')
+plt.ylabel('')
+plt.yticks(ticks=range(1,len(model_type)+1), labels = ['BLR','SVM','RF','GBM'])
+
+plt.subplot(1,2,2)
+plt.title('Specificity')
+plt.ylabel('')
+plt.yticks(ticks=range(1,len(model_type)+1), labels = [])
+plt.legend(['before','after'], loc='lower right')
+plt.tight_layout()
 
