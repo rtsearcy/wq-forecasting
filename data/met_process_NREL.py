@@ -9,10 +9,11 @@ import os
 
 # Inputs #
 folder = '/Users/rtsearcy/Box/water_quality_modeling/forecasting/data/met/NREL/'
-beach = 'santa_cruz'
+folder = '/Volumes/GoogleDrive/My Drive/high_frequency_wq/harbor_study_2022/data/hindcast'
+beach = 'HMB'
 
 ### Read Raw Files
-raw_folder = os.path.join(folder,beach,'raw')
+raw_folder = os.path.join(folder,'NREL_raw')
 files = os.listdir(raw_folder)
 
 df = pd.DataFrame()

@@ -541,7 +541,7 @@ def fit_gbm(X, y, score_metric, output_bin=True, seed=0, select_vars='all', cv=5
 #%% Inputs
 base_folder = '/Volumes/GoogleDrive/My Drive/water_quality_modeling/forecasting'
 
-beach = 'Cowell'
+beach = 'HSB3N'
 fib = 'EC'                               # FIB to model: ENT, EC
 
 train_years = list(range(2009, 2019))    # Which years to include in the training set? Note: range doesn't include last number

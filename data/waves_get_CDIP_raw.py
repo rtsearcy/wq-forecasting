@@ -16,17 +16,18 @@ import pandas as pd
 
 # Inputs #
 outfolder_vars = '/Volumes/GoogleDrive/My Drive/water_quality_modeling/forecasting/data/waves'
+#outfolder_vars = '/Volumes/GoogleDrive/My Drive/high_frequency_wq/harbor_study_2022/data/hindcast'
 outfolder_raw = os.path.join(outfolder_vars,'raw')
-sd = '20000101'  # start date, Must be YYYYMMDD format
-ed = '20220101'  # end date, Because UTC time, include extra day
+sd = '20170101'  # start date, Must be YYYYMMDD format
+ed = '20220804'  # end date, Because UTC time, include extra day
 
 stations = {
     # 'Imperial Beach Nearshore': '155', # Lots of missing data
     # 'Point Loma South':	'191',
     #'Scripps Nearshore': '201', # Recently online
     # 'Torrey Pines Outer': '100',
-    'Oceanside Offshore': '045',
-    'San Pedro': '092',
+    #'Oceanside Offshore': '045',
+    #'San Pedro': '092',
 #    'Santa Monica Bay':	'028',
 #    'Anacapa Passage': '111',
 #    'Harvest': '071',
@@ -36,7 +37,7 @@ stations = {
 #    'Monterey Bay Outer': '156',
      # 'Pt Santa Cruz': '254',
      # 'Monterey Bay West': '185',
-     # 'San Francisco Bar': '142',
+     'San Francisco Bar': '142',
 #    'Point Reyes': '029',
 #    'Cape Mendocino': '094',
 #    'Humboldt Bay North Spit': '168',

@@ -45,9 +45,9 @@ from datetime import date
 
 ### Inputs #
 base_folder = '/Volumes/GoogleDrive/My Drive/water_quality_modeling/forecasting'
-beach = 'Cowell' 
+beach = 'HSB3N' 
 
-season = 'Summer'  # Summer, Winter , All
+season = 'All'  # Summer, Winter , All
 sd = '20070101'  # Start date (will parse out depending on season
 ed = '20211231'  # End date
 
@@ -165,5 +165,5 @@ print('\nNum samples with samples taken 1-3 days previously:')
 for i in range(1,4):
     print(str(i) + ' days: ' + str(len(df_vars[f+str(i)].dropna())))
 var_file = os.path.join(beach_dir, 'variables', 'FIB_variables_' + beach.replace(' ', '_') + '.csv')
-df_vars.to_csv(var_file)
+#df_vars.to_csv(var_file)
 print('\nSaved to : ' + var_file + '\n')
